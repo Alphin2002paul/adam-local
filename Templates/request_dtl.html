@@ -421,29 +421,26 @@
     </script>
     <script>
         function openEditModal(id, manufacturer, model, serviceDate, status, transmission, fuel, year, problem) {
-            // Get today's date
             const today = new Date();
             const currentYear = today.getFullYear();
             
-            // Calculate the minimum allowed date (10 days from today)
             const minDate = new Date(today);
             minDate.setDate(minDate.getDate() + 10);
-            const minDateString = minDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            const minDateString = minDate.toISOString().split('T')[0];
             
-            // Calculate the maximum allowed date (1 month from today)
             const maxDate = new Date(today);
             maxDate.setMonth(maxDate.getMonth() + 1);
-            const maxDateString = maxDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            const maxDateString = maxDate.toISOString().split('T')[0];
         
             Swal.fire({
                 title: 'Edit Service Request',
                 html: `
                     <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
                         <div style="flex: 1; margin-right: 10px;">
-                            <input id="swal-input1" class="swal2-input" placeholder="Manufacturer" value="${manufacturer || ''}" onkeypress="return /^[a-zA-Z0-9 ]*$/.test(event.key)">
+                            <input id="swal-input1" class="swal2-input" placeholder="Manufacturer" value="${manufacturer || ''}">
                         </div>
                         <div style="flex: 1; margin-right: 10px;">
-                            <input id="swal-input2" class="swal2-input" placeholder="Model" value="${model || ''}" onkeypress="return /^[a-zA-Z0-9 ]*$/.test(event.key)">
+                            <input id="swal-input2" class="swal2-input" placeholder="Model" value="${model || ''}">
                         </div>
                         <div style="flex: 1; margin-right: 10px;">
                             <input id="swal-input3" class="swal2-input" placeholder="Service Date" type="date" value="${serviceDate || ''}" min="${minDateString}" max="${maxDateString}">
@@ -465,12 +462,12 @@
                             </select>
                         </div>
                         <div style="flex: 1; margin-right: 10px;">
-                            <input id="swal-input6" class="swal2-input" placeholder="Year" value="${year || ''}" onkeypress="return /^[0-9]*$/.test(event.key)" maxlength="4">
+                            <input id="swal-input6" class="swal2-input" placeholder="Year" value="${year || ''}" maxlength="4">
                         </div>
                     </div>
                     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 10px;">
                         <div style="flex: 1; margin-right: 10px;">
-                            <input id="swal-input7" class="swal2-input" placeholder="Problem" value="${problem || ''}" onkeypress="return /^[a-zA-Z0-9 ]*$/.test(event.key)">
+                            <input id="swal-input7" class="swal2-input" placeholder="Problem" value="${problem || ''}">
                         </div>
                     </div>
                 `,
@@ -492,15 +489,6 @@
                         return false;
                     }
         
-                    // Check if the selected date is within the allowed range
-                    if (updatedServiceDate !== serviceDate) {
-                        const selectedDate = new Date(updatedServiceDate);
-                        if (selectedDate < minDate || selectedDate > maxDate) {
-                            Swal.showValidationMessage('Please select a date between 10 days and 1 month from today');
-                            return false;
-                        }
-                    }L
-        
                     // Validate year
                     const yearRegex = /^(20\d{2})$/;
                     if (!yearRegex.test(updatedYear) || parseInt(updatedYear) < 2000 || parseInt(updatedYear) > currentYear) {
@@ -518,11 +506,7 @@
             });
         }
         
-    
-    
-
         function updateServiceRequest(id, manufacturer, model, serviceDate, transmission, fuel, year, problem) {
-            // Make an AJAX request to update the service request
             return fetch(`/update_service/${id}/`, {
                 method: 'POST',
                 headers: {
@@ -530,19 +514,23 @@
                     'X-CSRFToken': '{{ csrf_token }}',
                 },
                 body: JSON.stringify({
-                    manufacturer: manufacturer,
-                    model: model,
+                    manufacturer,
+                    model,
                     service_date: serviceDate,
-                    transmission: transmission,
-                    fuel: fuel,
-                    year: year,
-                    problem: problem
+                    transmission,
+                    fuel,
+                    year,
+                    problem
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    // Show success message
                     return Swal.fire({
                         title: 'Updated!',
                         text: 'Service request has been updated.',
@@ -552,6 +540,10 @@
                 } else {
                     return Swal.fire('Error!', data.message, 'error');
                 }
+            })
+            .catch(error => {
+                console.error('Error during fetch:', error);
+                Swal.fire('Error!', 'An error occurred while updating the service request.', 'error');
             });
         }
 
